@@ -26,7 +26,7 @@ def loginFunc(password):
     logButton.click()
 
 
-loginFunc("!nneBandy22")
+loginFunc("")
 
 
 
