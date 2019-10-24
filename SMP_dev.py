@@ -58,7 +58,7 @@ Login_data = {
 "__EVENTARGUMENT":"", 
 "__VIEWSTATEGENERATOR": "CA0B0334",
 "ctl00$PageContent$ucLogin$txtUsername": "joakim.a.svensson@lansstyrelsen.se",
-"ctl00$PageContent$ucLogin$txtPassword": "!nneBandy22",
+"ctl00$PageContent$ucLogin$txtPassword": "",
 "ctl00$PageContent$ucLogin$btnLogin": "Logga in"}
 
 url = "https://smp.lansstyrelsen.se/Default.aspx"
