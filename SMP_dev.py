@@ -13,16 +13,21 @@ import pyautogui as auto
 import bs4 as bs 
 from selenium.webdriver.support.select import Select
 from bs4 import BeautifulSoup
+import re
 
+# =============================================================================
+# Accessing and working with smp with selenium
+# =============================================================================
 
-browser=webdriver.Chrome("C:/Py3/chromedriver.exe")
-
-
+"""
+Goal 1: Iterate through all search results and makes sure that all "next" pages are accessed"
+Goal 2: Iterate through all municipalities and create subfolder to store them in the respective folder
+"""
 
 mail="joakim.a.svensson@lansstyrelsen.se"
 url = "https://smp.lansstyrelsen.se/Tillsynsmyndighet/SearchAnlaggning.aspx"
 
-password = ""
+password = "!nneBandy22"
 
 #browser=webdriver.Firefox(executable_path=r'C:\Py3\geckodriver.exe')    
 
@@ -46,13 +51,161 @@ kommunList = ["Boxholm", "Finspång", "Kinda","Linköping","Mjölby","Motala","N
 obj = Select(browser.find_element_by_id('PageContent_ucSearchAnlaggning_ddlLan'))
 obj.select_by_value("05")
 objKom = Select(browser.find_element_by_id('PageContent_ucSearchAnlaggning_ddlKommun'))
-objKom.select_by_visible_text("Linköping")
+objKom.select_by_visible_text("Norrköping")
+objMynd = Select(browser.find_element_by_id("PageContent_ucSearchAnlaggning_ddlTillsynsmyndighet"))
+objMynd.select_by_index(0) #Value: 112 Linköping kommun. 134 LstE  
 
 elemShow=browser.find_element_by_id("btnSearch")
 elemShow.click()
+time.sleep(3)
+sep = " "
 
+d=browser.find_elements_by_class_name('headRow')
+
+for x in d:
+    hit=re.match(r".+\s\d-\d{2}\s[a-z,A-Z]{2}\s\d{2}", x.text)
+    if hit:
+        D=hit.group(0).split(" ")
+        print(D[-1])
+
+count = 0
+count2 = 0
+
+try: 
+    for elem in elems:
+        if count == 1:
+            elem.click()
+            time.sleep(4)
+            count = 0
+        if elem.text == "nästa >>":
+            elem.click()
+            time.sleep(5)
+            count = 0
+            elems2 = browser.find_elements_by_xpath('//a[@href]')
+            for elem2 in elems2:
+
+                if count2 == 1:
+                    elem2.click()
+                    count2 = 0
+                else:
+                    a=re.match(r'\d{6},\s\d{2}:\d{2}\s\(\d\)', elem2.text)
+                    if a:
+                        count2 += 1
+        else:
+            a=re.match(r'\d{6},\s\d{2}:\d{2}\s\(\d\)', elem.text)
+            if a:
+                count += 1
+except Exception as e:
+    print(e)
+
+
+kommunList = ["Boxholm", "Finspång", "Kinda","Linköping","Mjölby","Motala","Norrköping", "Söderköping","Vadstena", "Valdemarsvik", "Ydre", "Åtvidaberg", "Ödeshög"]
+for x in d:
+    hit=re.match(r".+\s\d-\d{2}\s[a-z,A-Z]{2}\s\d{2}", x.text)
+    if hit:
+        D=hit.group(0).split(" ")
+
+while int(D[-1]) > n:
+    n += 30
+    elems = browser.find_elements_by_xpath('//a[@href]')
+    for elem in elems:
+        if elem.text == "nästa >>":
+            elem.click()
+            time.sleep(5)
+            count = 0
+            break
+        if count == 1:
+            elem.click()
+            time.sleep(4)
+            count = 0
+        else:
+             a=re.match(r'\d{6},\s\d{2}:\d{2}\s\(\d\)', elem.text)
+             if a:
+                count += 1
+
+kommunList = ["Boxholm", "Finspång", "Kinda","Linköping","Mjölby","Motala","Norrköping", "Söderköping","Vadstena", "Valdemarsvik", "Ydre", "Åtvidaberg", "Ödeshög"]
+
+
+        
+count = 0 
+n = 0 
+
+
+while int(D[-1]) > n:
+    n += 30
+    elems = browser.find_elements_by_xpath('//a[@href]')
+    for elem in elems:
+        if elem.text == "nästa >>":
+            elem.click()
+            time.sleep(5)
+            count = 0
+            break
+        if count == 1:
+            elem.click()
+            time.sleep(4)
+            count = 0
+        else:
+             a=re.match(r'\d{6},\s\d{2}:\d{2}\s\(\d\)', elem.text)
+             if a:
+                count += 1
+                
+
+
+
+while i > n:
+    n +=10
+    A=[3,4,5,6,7]
+    for x in A:
+        print(x)
+        
+        
+    
+
+
+
+len(elems)
+elem.text
+
+for x in elems:
+    print(x.text)
+
+
+
+#elems[24].click()
+
+#elems[19].click()
+
+elems = browser.find_elements_by_xpath('//a[@href]')
+for elem in elems:
+    print(elem.text)
+    
+
+
+
+#https://smp.lansstyrelsen.se/forvaltning/MergeAndUploadPDF.aspx?mrId=121707
+#https://smp.lansstyrelsen.se/Tillsynsmyndighet/SearchAnlaggning.aspx?AnlaggningId=913&MrId=120474
+#
 browser.find_element_by_link_text()
 
+
+a = [1,2,3]
+
+for x in a:
+    a=a
+    print(x)
+
+
+
+
+
+
+
+
+
+
+# =============================================================================
+# Accessing and working with SMP through Requests
+# =============================================================================
 Login_data = {
 "__EVENTTARGET":"", 
 "__EVENTARGUMENT":"", 
@@ -75,4 +228,7 @@ with requests.Session() as s:
     print(r.content)
     r=s.get(url)
     r.content
+    
+    
+    
     
