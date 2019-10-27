@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Oct 27 10:51:37 2019
+@author: BigTail
+"""
+#https://stackoverflow.com/questions/47533875/how-to-extract-table-as-text-from-the-pdf-using-python
+#Through answer on PDF extraction
+
+import PyPDF2
+import os
+
+# pdf file object
+# you can find find the pdf file with complete code in below
+pdfFileObj = open('0560-106_2018_1.pdf', 'rb')
+# pdf reader object
+pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
+# number of pages in pdf
+print(pdfReader.numPages)
+# a page object
+pageObj = pdfReader.getPage(0)
+# extracting text from page.
+# this will print the text you can also save that into String
+print(pageObj.extractText())
+
+
+
+
+import tabula
+# readinf the PDF file that contain Table Data
+# you can find find the pdf file with complete code in below
+# read_pdf will save the pdf table into Pandas Dataframe
+df = tabula.read_pdf("0560-106_2018_1.pdf")
+# in order to print first 5 lines of Table
+df.head()
+
+df = tabula.read_pdf("0560-106_2018_1.pdf",multiple_tables=True)
+
+
+
+#df[1][0][0]
+
+df = tabula.read_pdf("0560-106_2018_1.pdf", pages='all', multiple_tables=True)
+tabula.convert_into("0560-106_2018_1.pdf", "output.csv", output_format="csv", pages='all',multiple_tables=True)
+
+import pandas as pd 
+csvDf=pd.read_csv("output.csv", sep=',', encoding='windows-1252')
+
+
+
+pdfFileObj=open("0560-106_2018_1.pdf", 'rb')
+pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
+pdfReader.getNumPages()
+
+
+
+
+# Read remote pdf into DataFrame
+df2 = tabula.read_pdf("https://github.com/tabulapdf/tabula-java/raw/master/src/test/resources/technology/tabula/arabic.pdf")
+
+# convert PDF into CSV
+tabula.convert_into("test.pdf", "output.csv", output_format="csv", pages='all')
+
+# convert all PDFs in a directory
+tabula.convert_into_by_batch("input_directory", output_format='csv', pages='all)
