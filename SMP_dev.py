@@ -6,6 +6,7 @@ Created on Sat Oct 26 12:03:21 2019
 
 """
 Cleaner SMP download Script 
+Selenium troubleshoot: https://www.pingshiuanchua.com/blog/post/error-handling-in-selenium-on-python
 """
 
 from selenium import webdriver
@@ -17,12 +18,14 @@ import re
 import time
 from selenium.webdriver.chrome.options import Options
 import os 
+from selenium.common.exceptions import StaleElementReferenceException
 
 mail="joakim.a.svensson@lansstyrelsen.se"
 url = "https://smp.lansstyrelsen.se/Tillsynsmyndighet/SearchAnlaggning.aspx"
 password = ""
 kommunList = ["Boxholm", "Finspång", "Kinda","Linköping","Mjölby","Motala","Norrköping", "Söderköping","Vadstena", "Valdemarsvik", "Ydre", "Åtvidaberg", "Ödeshög"]
-     
+muni = "Linköping"
+
 def searchMuni(muni):
     muniPath="C:\Py3\\"+muni
     os.makedirs(muniPath, exist_ok=True)
@@ -38,10 +41,22 @@ def searchMuni(muni):
     logButton.click()
     lanElem=browser.find_element_by_id("_Miljörapport")
     lanElem.click()
-    obj = Select(browser.find_element_by_id('PageContent_ucSearchAnlaggning_ddlLan'))
+    while True:
+        try:
+            obj = Select(browser.find_element_by_id('PageContent_ucSearchAnlaggning_ddlLan'))
+        except StaleElementReferenceException:
+            continue
+        break
     obj.select_by_value("05")
-    objKom = Select(browser.find_element_by_id('PageContent_ucSearchAnlaggning_ddlKommun'))
+    print("I am lucky?")
+    while True:
+        try:
+            objKom = Select(browser.find_element_by_id('PageContent_ucSearchAnlaggning_ddlKommun'))
+        except StaleElementReferenceException:
+            continue
+        break
     objKom.select_by_visible_text(muni)
+    print("Wow! So lucky!")
     objMynd = Select(browser.find_element_by_id("PageContent_ucSearchAnlaggning_ddlTillsynsmyndighet"))
     objMynd.select_by_index(0) #Value: 112 Linköping kommun. 134 LstE  
     elemShow=browser.find_element_by_id("btnSearch")
@@ -58,6 +73,8 @@ def searchMuni(muni):
         n += 30
         elems = browser.find_elements_by_xpath('//a[@href]')
         for elem in elems:
+            if elem.text == "Emissonsdeklaration":
+                elem.click()
             if elem.text == "nästa >>":
                 elem.click()
                 time.sleep(5)
@@ -71,6 +88,7 @@ def searchMuni(muni):
                  a=re.match(r'\d{6},\s\d{2}:\d{2}\s\(\d\)', elem.text) #Matches e.g. 190711, 14:59 (3)
                  if a:
                     count += 1
+
 
 for muni in kommunList:
     searchMuni(muni)
