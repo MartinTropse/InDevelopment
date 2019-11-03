@@ -1,64 +1,95 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Oct 27 10:51:37 2019
+Created on Thu Oct 31 18:24:00 2019
 @author: BigTail
 """
-#https://stackoverflow.com/questions/47533875/how-to-extract-table-as-text-from-the-pdf-using-python
-#Through answer on PDF extraction
 
-import PyPDF2
-import os
+"""
+A tool to extract text from pdfs and condense the information based on search queries, through 
+extraction of specific sentences and images. 
 
-# pdf file object
-# you can find find the pdf file with complete code in below
-pdfFileObj = open('0560-106_2018_1.pdf', 'rb')
-# pdf reader object
-pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
-# number of pages in pdf
-print(pdfReader.numPages)
-# a page object
-pageObj = pdfReader.getPage(0)
-# extracting text from page.
-# this will print the text you can also save that into String
-print(pageObj.extractText())
+This script was writen as part of a workflow that extract pdfs from webdatabase,
+but the tool can be used in isolation and works for any collection of pdf reports. 
 
+The next step would be to allow more user input to easier customize the search. 
+Producing graphs, potentially through R scripts, based on number of findings are 
+and types of findings. What is the distrubution among municipalities and the types of companies 
+reporting energy data?   
+ 
+Once things are more developed I consider making a GUI as well. 
+"""
 
-
-
+from selenium.webdriver.support.select import Select
+from selenium import webdriver
+import re
+import time
+from selenium.webdriver.chrome.options import Options
+import os 
+from selenium.common.exceptions import StaleElementReferenceException
 import tabula
-# readinf the PDF file that contain Table Data
-# you can find find the pdf file with complete code in below
-# read_pdf will save the pdf table into Pandas Dataframe
-df = tabula.read_pdf("0560-106_2018_1.pdf")
-# in order to print first 5 lines of Table
-df.head()
+import pytesseract
+from PIL import Image
+from wand.image import Image as wi
+import io
 
-df = tabula.read_pdf("0560-106_2018_1.pdf",multiple_tables=True)
+os.chdir(r"C:\Py3\SMP\PDF_Mine\pdf")
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pdfList=os.listdir()
+
+machineList = []
+baseDir="C:\Py3\SMP\PDF_Mine\pdf"
+
+def pdfMiner(baseDir):
+    for baseFold, subdir, files in os.walk(baseDir):
+        for file in files:
+            machineList= []
+            extracted_text = []    
+            imgBlobs = []
+            pdf = wi(filename=baseFold+"/"+file, resolution = 300)
+            pdfImg = pdf.convert('jpeg')
+            for img in pdfImg.sequence:
+                page=wi(image=img) #This opens an actual image
+                imgBlobs.append(page.make_blob('jpeg')) #This object contains byte data, make_blob cause the conversion    
+            #The bytes object is the converted back to image before being passed to pytesseract    
+            for imgBlob in imgBlobs:
+                im = Image.open(io.BytesIO(imgBlob)) #"im" is an PIL, JpegImageFile which is assumes is the prefered object of tessearct
+                text = pytesseract.image_to_string(im, lang='swe')
+                extracted_text.append(text)    
+            pos = -1
+            pat = re.compile(r'([A-Z,Å,Ä,Ö][^\.!?]*[\.!?])', re.M) # pattern: Upercase, then anything that is not in (.!?), then one of them
+            path=baseFold+"/"+file[:-4]
+            os.makedirs(path, exist_ok=True)
+            for page in extracted_text:
+                pos += 1
+                newSent = ""
+                sentList = []    
+                splitSent=pat.findall(page)
+                for sentc in splitSent:
+                    newSent += re.sub("\n", " ", sentc)
+                extracted_text[pos] = newSent
+            nPage = 0
+            for page in extracted_text:
+                chkVal = 0
+                nPage += 1
+                pat = re.compile(r'([A-Z,Å,Ä,Ö][^\.!?]*[\.!?])', re.M)
+                splitSent=pat.findall(page)
+                nLine = 0
+                for x in splitSent:
+                    nLine +=1
+                    mash=re.search('MWh|TWh|CO2|Koldioxid',x, re.IGNORECASE)
+                    if mash:
+                        print("a hit?")
+                        machineList.append(x+" Page number "+str(nPage)+" sentence "+str(nLine))
+                        if chkVal == 0:
+                            imgBlob=imgBlobs[nPage-1]
+                            im = Image.open(io.BytesIO(imgBlob))
+                            im.save(path+"/"+"Page_"+str(nPage)+".jpeg")
+                            chkVal +=1
+            with open(path+"/"+file[:-4]+".txt", 'w') as nwFile:
+                if len(machineList) > 0:
+                    for line in machineList:
+                        nwFile.write(line)
+                        nwFile.write('\n')
 
 
-
-#df[1][0][0]
-
-df = tabula.read_pdf("0560-106_2018_1.pdf", pages='all', multiple_tables=True)
-tabula.convert_into("0560-106_2018_1.pdf", "output.csv", output_format="csv", pages='all',multiple_tables=True)
-
-import pandas as pd 
-csvDf=pd.read_csv("output.csv", sep=',', encoding='windows-1252')
-
-
-
-pdfFileObj=open("0560-106_2018_1.pdf", 'rb')
-pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
-pdfReader.getNumPages()
-
-
-
-
-# Read remote pdf into DataFrame
-df2 = tabula.read_pdf("https://github.com/tabulapdf/tabula-java/raw/master/src/test/resources/technology/tabula/arabic.pdf")
-
-# convert PDF into CSV
-tabula.convert_into("test.pdf", "output.csv", output_format="csv", pages='all')
-
-# convert all PDFs in a directory
-tabula.convert_into_by_batch("input_directory", output_format='csv', pages='all)
+pdfMiner(baseDir)
